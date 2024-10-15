@@ -37,13 +37,38 @@ def draw_pool_table():
     pygame.draw.rect(screen, BROWN, (0, 0, EDGE_WIDTH, HEIGHT))
     pygame.draw.rect(screen, BROWN, (WIDTH-EDGE_WIDTH, 0, EDGE_WIDTH, HEIGHT))
 
+    # Calculate offset based on radius
+    pocket_radius = POCKET_RADIUS
+    offset = pocket_radius / math.sqrt(2)
+
     # Draw the pockets
-    draw_arc(0, 0, POCKET_RADIUS, 3*math.pi / 2, 0, BLACK)  # Top-left corner
-    draw_arc(WIDTH-POCKET_RADIUS*2, 0, POCKET_RADIUS, math.pi, 3*math.pi/2, BLACK)  # Top-right corner
-    draw_arc(0, HEIGHT - POCKET_RADIUS*2, POCKET_RADIUS, 0, math.pi / 2, BLACK)  # Bottom-left corner
-    draw_arc(WIDTH - POCKET_RADIUS*2, HEIGHT - POCKET_RADIUS*2, POCKET_RADIUS, math.pi / 2, math.pi , BLACK)  # Bottom-right corner
-    draw_arc(WIDTH / 2 - POCKET_RADIUS*2, 0, POCKET_RADIUS, math.pi, 0, BLACK)  # Top center
-    draw_arc(WIDTH / 2 - POCKET_RADIUS*2, HEIGHT - POCKET_RADIUS*2, POCKET_RADIUS, 0, math.pi, BLACK)  # Bottom center
+    # For each corner pocket, start from inner edge intersection and offset the center
+
+    # Top-left corner pocket
+    pygame.draw.circle(screen, BLACK, 
+                      (EDGE_WIDTH + offset, EDGE_WIDTH + offset), 
+                      pocket_radius)
+
+    # Top-right corner pocket
+    pygame.draw.circle(screen, BLACK, 
+                      (WIDTH - EDGE_WIDTH - offset, EDGE_WIDTH + offset), 
+                      pocket_radius)
+
+    # Bottom-left corner pocket
+    pygame.draw.circle(screen, BLACK, 
+                      (EDGE_WIDTH + offset, HEIGHT - EDGE_WIDTH - offset), 
+                      pocket_radius)
+
+    # Bottom-right corner pocket
+    pygame.draw.circle(screen, BLACK, 
+                      (WIDTH - EDGE_WIDTH - offset, HEIGHT - EDGE_WIDTH - offset), 
+                      pocket_radius)
+
+    # Top middle pocket
+    pygame.draw.circle(screen, BLACK, (WIDTH // 2, EDGE_WIDTH), pocket_radius)
+
+    # Bottom middle pocket
+    pygame.draw.circle(screen, BLACK, (WIDTH // 2, HEIGHT - EDGE_WIDTH), pocket_radius)
 
 
     # Draw the diamond spots
@@ -56,7 +81,7 @@ def draw_pool_table():
         draw_diamond(EDGE_WIDTH/2, EDGE_WIDTH/2 + (HEIGHT-EDGE_WIDTH*2)/4 * (i+1), DIAMOND_SIZE, WHITE)
         draw_diamond(WIDTH-EDGE_WIDTH/2, EDGE_WIDTH/2 + (HEIGHT-EDGE_WIDTH*2)/4 * (i+1), DIAMOND_SIZE, WHITE)
 
-    
+
     # Draw the head string
     pygame.draw.line(screen, WHITE, (int(EDGE_WIDTH + (WIDTH-EDGE_WIDTH*2-POCKET_RADIUS*2)/8 * 2), EDGE_WIDTH), (int(EDGE_WIDTH + (WIDTH-EDGE_WIDTH*2-POCKET_RADIUS*2)/8 * 2), HEIGHT - EDGE_WIDTH), 2)
 
