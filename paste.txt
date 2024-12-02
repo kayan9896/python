@@ -1,75 +1,5 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
-
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  // In production, we want to load the built version of our React app
-  win.loadFile(path.join(__dirname, '../build/index.html'));
-  
-  // Uncomment this line for debugging
-  // win.webContents.openDevTools();
-}
-
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-Update your package.json to ensure the build process is correct:
-json
-{
-  "main": "public/electron.js",
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "electron-pack": "npm run build && electron-builder",
-    "electron-dev": "concurrently \"BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\""
-  },
-  "build": {
-    "appId": "com.example.your-app",
-    "files": [
-      "build/**/*",
-      "public/electron.js"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    }
-  }
-}
-Make sure your React app's build process includes all necessary assets. Update your public/index.html:
-html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Your App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
-Add error handling and logging: Update your electron.js:
-javascript
-// ... other imports
 const isDev = require('electron-is-dev');
 
 function createWindow() {
@@ -78,59 +8,91 @@ function createWindow() {
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      enableRemoteModule: true,
     }
   });
 
-  const indexPath = path.join(__dirname, '../build/index.html');
-  win.loadFile(indexPath).catch(err => {
-    console.error('Failed to load index.html:', err);
-  });
+  win.loadURL(
+    isDev
+      ? 'http://localhost:3000'
+      : `file://${path.join(__dirname, '../build/index.html')}`
+  );
 
-  // Open DevTools for debugging
-  win.webContents.openDevTools();
-
-  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Failed to load:', errorCode, errorDescription);
-  });
+  // Open DevTools in development mode
+  if (isDev) {
+    win.webContents.openDevTools();
+  }
 }
 
-// ... rest of the file
-Check if the build process is creating all necessary files:
-After running npm run electron-pack, verify that:
+app.whenReady().then(createWindow);
 
-The build folder contains your compiled React app
-index.html exists in the build folder
-All JavaScript and CSS files are present
-For debugging, you can also create a simple test page to verify Electron is working:
 
-javascript
+
+{
+  "build": {
+    "appId": "com.example.yourapp",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  }
+
+
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    }
   });
 
-  // Test with a simple HTML content
-  win.loadURL(`data:text/html,
-    <html>
-      <body>
-        <h1>Test Page</h1>
-        <script>
-          document.body.appendChild(document.createTextNode('App is working!'));
-        </script>
-      </body>
-    </html>
-  `);
+  const startUrl = isDev
+    ? 'http://localhost:3000'
+    : `file://${path.join(__dirname, '../build/index.html')}`;
 
-  win.webContents.openDevTools();
-}
-Check for any console errors: Add this to your electron.js:
-javascript
-function createWindow() {
-  // ... other code ...
-
-  win.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    console.log('Renderer Console:', message);
+  console.log('Starting URL:', startUrl);
+  
+  win.loadURL(startUrl).catch(err => {
+    console.error('Failed to load URL:', err);
   });
+
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Page failed to load');
+    console.error(errorCode, errorDescription);
+  });
+
+  // Rest of your createWindow function
 }
+
+
+
+{
+  "scripts": {
+    "react-build": "react-scripts build",
+    "electron-build": "webpack --config webpack.electron.config.js",
+    "build": "npm run react-build && npm run electron-build",
+    "electron-pack": "npm run build && electron-builder -c.extraMetadata.main=dist/electron.js"
+  }
+}
+
+
+
+const url = require('url');
+
+// In createWindow function:
+win.loadURL(
+  isDev
+    ? 'http://localhost:3000'
+    : url.format({
+        pathname: path.join(__dirname, '../build/index.html'),
+        protocol: 'file:',
+        slashes: true
+      })
+);
