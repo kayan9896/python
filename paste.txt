@@ -1,60 +1,107 @@
-npm install --save-dev electron electron-builder concurrently wait-on
-npm install electron-is-dev
-Create a new file public/electron.js:
+Use dynamic imports:
+Instead of:
+
+javascript
+const isDev = require('electron-is-dev');
+Use:
+
+javascript
+let isDev;
+import('electron-is-dev').then(module => {
+  isDev = module.default;
+});
+Convert your electron.js to an ES module:
+
+Rename electron.js to electron.cjs (CommonJS module)
+Update package.json:
+json
+{
+  "main": "public/electron.cjs",
+  // ... rest of your package.json
+}
+Use a bundler for the main process:
+Install webpack and related dependencies:
+
+npm install --save-dev webpack webpack-cli @babel/core @babel/preset-env babel-loader
+Create a webpack.electron.config.js file:
 
 javascript
 const path = require('path');
-const { app, BrowserWindow } = require('electron');
-const isDev = require('electron-is-dev');
 
-function createWindow() {
-  // Create the browser window.
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  });
+module.exports = {
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  },
+  devtool: 'source-map',
+  entry: './public/electron.js',
+  target: 'electron-main',
+  module: {
+    rules: [
+      {
+        test: /\.(js|ts|tsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+        },
+      },
+    ],
+  },
+  output: {
+    path: path.resolve(__dirname, './dist'),
+    filename: 'electron.js',
+  },
+};
+Update your package.json scripts:
 
-  // Load the index.html from a url
-  win.loadURL(
-    isDev
-      ? 'http://localhost:3000'
-      : `file://${path.join(__dirname, '../build/index.html')}`
-  );
+json
+{
+  "scripts": {
+    // ... other scripts
+    "electron-build": "webpack --config webpack.electron.config.js",
+    "electron-pack": "npm run electron-build && electron-builder -c.extraMetadata.main=dist/electron.js",
+    "preelectron-pack": "npm run build"
+  }
 }
+Use esm package:
 
-app.whenReady().then(createWindow);
+npm install --save-dev esm
+Update your electron.js:
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+javascript
+require = require('esm')(module);
+module.exports = require('./your-es-module.js');
+Downgrade problematic dependencies:
+If possible, try to use older versions of the dependencies that are causing issues, which might still use CommonJS.
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+Here's a more detailed approach using option 3 (webpack bundler):
+
+Install necessary dependencies:
+
+npm install --save-dev webpack webpack-cli @babel/core @babel/preset-env babel-loader
+Create a .babelrc file:
+
+json
+{
+  "presets": ["@babel/preset-env"]
+}
+Use the webpack.electron.config.js as shown above.
+
 Update your package.json:
 
 json
 {
-  "main": "public/electron.js",
+  "main": "dist/electron.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "electron-build": "webpack --config webpack.electron.config.js",
     "electron-dev": "concurrently \"BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-pack": "electron-builder -c.extraMetadata.main=build/electron.js",
-    "preelectron-pack": "npm run build"
+    "electron-pack": "npm run build && npm run electron-build && electron-builder -c.extraMetadata.main=dist/electron.js",
   },
   "build": {
     "appId": "com.example.yourapp",
     "files": [
+      "dist/**/*",
       "build/**/*",
       "node_modules/**/*"
     ],
@@ -63,9 +110,7 @@ json
     }
   }
 }
-To run in development mode:
-
-npm run electron-dev
-To create an executable:
+Run the packaging command:
 
 npm run electron-pack
+This setup will bundle your Electron main process script, resolving the ES module issues. The webpack configuration ensures that all imports are properly handled, regardless of whether they use ES modules or CommonJS syntax.
