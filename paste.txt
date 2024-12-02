@@ -1,18 +1,20 @@
-
 npm install --save-dev electron electron-builder concurrently wait-on
-Create a new file called electron.js in the public folder of your React app:
+npm install electron-is-dev
+Create a new file public/electron.js:
+
 javascript
-const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { app, BrowserWindow } = require('electron');
 const isDev = require('electron-is-dev');
 
 function createWindow() {
+  // Create the browser window.
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
-    },
+      nodeIntegration: true
+    }
   });
 
   // Load the index.html from a url
@@ -37,6 +39,7 @@ app.on('activate', () => {
   }
 });
 Update your package.json:
+
 json
 {
   "main": "public/electron.js",
@@ -50,7 +53,7 @@ json
     "preelectron-pack": "npm run build"
   },
   "build": {
-    "appId": "com.example.hip-operation-software",
+    "appId": "com.example.yourapp",
     "files": [
       "build/**/*",
       "node_modules/**/*"
@@ -58,17 +61,11 @@ json
     "directories": {
       "buildResources": "assets"
     }
-  },
-  "devDependencies": {
-    "electron": "^latest",
-    "electron-builder": "^latest",
-    "concurrently": "^latest",
-    "wait-on": "^latest"
   }
 }
-To test the app in development mode:
-bash
+To run in development mode:
+
 npm run electron-dev
-To build the executable:
-bash
+To create an executable:
+
 npm run electron-pack
