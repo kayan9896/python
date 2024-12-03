@@ -1,112 +1,32 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
-const isDev = require('electron-is-dev');
 const { PythonShell } = require('python-shell');
+const isDev = require('electron-is-dev');
 
 let pyProc = null;
-let pyPort = '5000';
+let pyPort = 5000;
 
-const createPyProc = () => {
-  let script = path.join(__dirname, '../api', 'app.py');
-  let pyOptions = {
+const startFlaskServer = () => {
+  const script = isDev
+    ? path.join(__dirname, '../flask_app/app.py')
+    : path.join(process.resourcesPath, 'flask_app/app.py');
+
+  const options = {
     mode: 'text',
-    pythonPath: isDev ? 'python' : path.join(__dirname, '../api', 'dist', 'api', 'api.exe'),
-    pythonOptions: ['-u'], // unbuffered output
-    scriptPath: isDev ? '' : path.join(__dirname, '../api')
+    pythonPath: isDev ? 'python' : path.join(process.resourcesPath, 'python/python.exe'),
+    pythonOptions: ['-u'],
+    scriptPath: path.dirname(script),
   };
 
-  pyProc = new PythonShell('app.py', pyOptions);
-
-  pyProc.on('message', (message) => {
+  pyProc = new PythonShell(path.basename(script), options);
+  
+  pyProc.on('message', function (message) {
     console.log(message);
   });
 };
 
-const exitPyProc = () => {
-  pyProc.end(() => {
-    console.log('Python process finished');
-  });
-};
-
-app.on('ready', createPyProc);
-app.on('will-quit', exitPyProc);
-
-function createWindow() {
-  // ... existing window creation code
-}
-
-// ... rest of your electron.js file
-Install required dependencies:
-
-bash
-npm install python-shell electron-is-dev
-Package Python with PyInstaller:
-
-First, package your Flask app:
-bash
-pip install pyinstaller
-pyinstaller --onefile app.py
-Move the generated executable to your Electron app's directory
-Update the Python executable path in electron.js
-Use a more comprehensive approach:
-Here's a detailed implementation:
-
-javascript
-// electron.js
-const path = require('path');
-const { app, BrowserWindow } = require('electron');
-const isDev = require('electron-is-dev');
-const { spawn } = require('child_process');
-const os = require('os');
-
-let mainWindow;
-let pyProc = null;
-
-const getPythonScriptPath = () => {
-  if (isDev) {
-    return path.join(__dirname, '..', 'api', 'app.py');
-  }
-  if (os.platform() === 'win32') {
-    return path.join(__dirname, '..', 'api', 'dist', 'app.exe');
-  }
-  return path.join(__dirname, '..', 'api', 'dist', 'app');
-};
-
-const createPyProc = () => {
-  let script = getPythonScriptPath();
-  
-  if (isDev) {
-    pyProc = spawn('python', [script]);
-  } else {
-    pyProc = spawn(script);
-  }
-
-  if (pyProc != null) {
-    console.log('Python process started successfully');
-    
-    pyProc.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-
-    pyProc.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
-    });
-
-    pyProc.on('close', (code) => {
-      console.log(`Python process exited with code ${code}`);
-    });
-  }
-};
-
-const exitPyProc = () => {
-  if (pyProc) {
-    pyProc.kill();
-    pyProc = null;
-  }
-};
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
+const createWindow = () => {
+  const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -115,79 +35,76 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
-  
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-}
+  win.loadFile(path.join(__dirname, '../build/index.html'));
+};
 
 app.whenReady().then(() => {
-  createPyProc();
+  startFlaskServer();
   createWindow();
 });
 
 app.on('window-all-closed', () => {
-  exitPyProc();
+  if (pyProc != null) {
+    pyProc.end(err => {
+      if (err) console.error('Error terminating Flask server:', err);
+    });
+  }
   if (process.platform !== 'darwin') {
-  app.quit();
+    app.quit();
   }
 });
-
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
-  }
-});
-
-app.on('will-quit', exitPyProc);
-Update your file structure:
-
-your-app/
-├── public/
-│   └── electron.js
-├── api/
-│   ├── app.py
-│   ├── requirements.txt
-│   └── dist/
-│       └── app.exe (or app for non-Windows)
-├── src/
-│   └── (React files)
-├── build/
-│   └── (React build output)
-└── package.json
-Build process:
-
-First, build your Flask app:
-bash
-cd api
-pip install -r requirements.txt
-pyinstaller --onefile app.py
-cd ..
-Then build and package your Electron app:
-bash
-npm run build
-npm run electron-pack
-Update package.json:
-
+Update your package.json to include Python files in the build:
 json
 {
-  // ... other configurations
   "build": {
-    "appId": "com.example.yourapp",
+    "appId": "com.example.your-app",
     "files": [
       "build/**/*",
-      "api/**/*"
+      "node_modules/**/*"
     ],
     "extraResources": [
       {
-        "from": "api/dist",
-        "to": "api/dist",
+        "from": "flask_app",
+        "to": "flask_app",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "python_env",
+        "to": "python",
         "filter": ["**/*"]
       }
-    ],
-    "directories": {
-      "buildResources": "assets"
+    ]
+  }
+}
+Create a Python virtual environment and install dependencies:
+bash
+python -m venv python_env
+python_env\Scripts\activate  # On Windows
+pip install flask pyinstaller
+Package your Flask app: Create a script package_flask.js:
+javascript
+const { exec } = require('child_process');
+const path = require('path');
+
+const packageFlask = () => {
+  const pyinstallerCommand = `pyinstaller --distpath ./python_env --workpath ./build/temp --clean -y --add-data "templates:templates" --add-data "static:static" flask_app/app.py`;
+  
+  exec(pyinstallerCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error: ${error}`);
+      return;
     }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+  });
+};
+
+packageFlask();
+Update your build scripts in package.json:
+json
+{
+  "scripts": {
+    "package-flask": "node package_flask.js",
+    "electron-pack": "npm run package-flask && npm run build && electron-builder"
   }
 }
