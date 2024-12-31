@@ -81,12 +81,12 @@ class GameWindow(QMainWindow):
 		# Create buttons and add them to grid
 		self.buttons = [[QPushButton() for _ in range(self.board_size)] for _ in range(self.board_size)]
 		for i in range(self.board_size):
-		for j in range(self.board_size):
-		    button = self.buttons[i][j]
-		    button.setFixedSize(50, 50)
-		    # Connect button to click event
-		    button.clicked.connect(lambda checked, row=i, col=j: self.onCellClick(row, col))
-		    game_layout.addWidget(button, i, j)
+			for j in range(self.board_size):
+				button = self.buttons[i][j]
+				button.setFixedSize(50, 50)
+				# Connect button to click event
+				button.clicked.connect(lambda checked, row=i, col=j: self.onCellClick(row, col))
+				game_layout.addWidget(button, i, j)
 
 		
 		# Add row sums
@@ -145,10 +145,10 @@ class GameWindow(QMainWindow):
 		# Handle game over state
 		# Reveal all cells
 		for i in range(self.board_size):
-		for j in range(self.board_size):
-		    if (i, j) not in self.revealed_cells:
-			value = self.board[i][j]
-			self.buttons[i][j].setText('B' if value == 'B' else str(value))
+			for j in range(self.board_size):
+				if (i, j) not in self.revealed_cells:
+					value = self.board[i][j]
+					self.buttons[i][j].setText('B' if value == 'B' else str(value))
 		
 		message = f"You {'won' if won else 'lost'}! Final score: {self.current_score}"
 		reply = QMessageBox.question(self, 'Game Over', f"{message}\nPlay again?", 
