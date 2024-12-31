@@ -71,22 +71,23 @@ class GameWindow(QMainWindow):
 		self.main_layout.addWidget(self.score_label)
 
 
-  def createBoard(self):
-    # Create game grid
-    game_layout = QGridLayout()
-    
-    # Generate board values
-    self.board = self.generateBoard()
-    
-    # Create buttons and add them to grid
-    self.buttons = [[QPushButton() for _ in range(self.board_size)] for _ in range(self.board_size)]
-    for i in range(self.board_size):
-        for j in range(self.board_size):
-            button = self.buttons[i][j]
-            button.setFixedSize(50, 50)
-            # Connect button to click event
-            button.clicked.connect(lambda checked, row=i, col=j: self.onCellClick(row, col))
-            game_layout.addWidget(button, i, j)
+	def createBoard(self):
+		# Create game grid
+		game_layout = QGridLayout()
+		
+		# Generate board values
+		self.board = self.generateBoard()
+		
+		# Create buttons and add them to grid
+		self.buttons = [[QPushButton() for _ in range(self.board_size)] for _ in range(self.board_size)]
+		for i in range(self.board_size):
+		for j in range(self.board_size):
+		    button = self.buttons[i][j]
+		    button.setFixedSize(50, 50)
+		    # Connect button to click event
+		    button.clicked.connect(lambda checked, row=i, col=j: self.onCellClick(row, col))
+		    game_layout.addWidget(button, i, j)
+
 		
 		# Add row sums
 		for i in range(self.board_size):
@@ -120,44 +121,43 @@ class GameWindow(QMainWindow):
 		return sum(x for x in col_values if isinstance(x, int)), col_values.count('B')
 
 
-  def onCellClick(self, row, col):
-    # Handle cell click event
-    if (row, col) in self.revealed_cells:
-        return
-    
-    self.revealed_cells.add((row, col))
-    value = self.board[row][col]
-    button = self.buttons[row][col]
-    
-    if value == 'B':
-        button.setText('B')
-        self.gameOver(False)
-    else:
-        button.setText(str(value))
-        self.current_score *= value
-        self.score_label.setText(f'Score: {self.current_score}')  # Update this line
-        
-        if len(self.revealed_cells) == self.board_size**2 - sum(row.count('B') for row in self.board):
-            self.gameOver(True)
+	def onCellClick(self, row, col):
+		# Handle cell click event
+		if (row, col) in self.revealed_cells:
+		return
+		
+		self.revealed_cells.add((row, col))
+		value = self.board[row][col]
+		button = self.buttons[row][col]
+		
+		if value == 'B':
+		button.setText('B')
+		self.gameOver(False)
+		else:
+		button.setText(str(value))
+		self.current_score *= value
+		self.score_label.setText(f'Score: {self.current_score}')  # Update this line
+		
+		if len(self.revealed_cells) == self.board_size**2 - sum(row.count('B') for row in self.board):
+		    self.gameOver(True)
 
-  def gameOver(self, won):
-    # Handle game over state
-    # Reveal all cells
-    for i in range(self.board_size):
-        for j in range(self.board_size):
-            if (i, j) not in self.revealed_cells:
-                value = self.board[i][j]
-                self.buttons[i][j].setText('B' if value == 'B' else str(value))
-    
-    message = f"You {'won' if won else 'lost'}! Final score: {self.current_score}"
-    reply = QMessageBox.question(self, 'Game Over', f"{message}\nPlay again?", 
-                                QMessageBox.Yes | QMessageBox.No)
-    
-    if reply == QMessageBox.Yes:
-        self.startGame()
-    else:
-        self.showMainMenu()  # Add this to return to main menu if player chooses not to play again
-
+	def gameOver(self, won):
+		# Handle game over state
+		# Reveal all cells
+		for i in range(self.board_size):
+		for j in range(self.board_size):
+		    if (i, j) not in self.revealed_cells:
+			value = self.board[i][j]
+			self.buttons[i][j].setText('B' if value == 'B' else str(value))
+		
+		message = f"You {'won' if won else 'lost'}! Final score: {self.current_score}"
+		reply = QMessageBox.question(self, 'Game Over', f"{message}\nPlay again?", 
+					QMessageBox.Yes | QMessageBox.No)
+		
+		if reply == QMessageBox.Yes:
+			self.startGame()
+		else:
+			self.showMainMenu() 
 
 
 if __name__ == '__main__':
@@ -166,7 +166,5 @@ if __name__ == '__main__':
 	game.setMinimumSize(400, 400)
 	game.show()
 	sys.exit(app.exec_())
-
-
 
 
