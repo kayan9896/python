@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAR Converter</title>
+    <style>
+
+        .progress-container {
+            width: 100%;
+            margin: 30px 0;
+        }
+
+        .progress {
+            height: 25px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+
+        #progress-text {
+            font-weight: bold;
+        }
+
+        #progress-status {
+            color: #666;
+            max-width: 80%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --error-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --border-color: #ddd;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: #f9f9f9;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: var(--dark-color);
+            opacity: 0.8;
+        }
+
+        .upload-section, .content-section, .conversion-section, .result-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .upload-box {
+            border: 3px dashed var(--border-color);
+            border-radius: 10px;
+            padding: 50px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-box:hover, .upload-box.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .upload-box i {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .upload-box h2 {
+            margin-bottom: 10px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+        }
+
+        .file-details {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-details i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+
+        .file-tree {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .tree-node {
+            padding: 5px 0;
+            margin-left: 20px;
+        }
+
+        .tree-node-content {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .tree-node-icon {
+            margin-right: 10px;
+            color: var(--dark-color);
+        }
+
+        .tree-node-name {
+            flex-grow: 1;
+        }
+
+        .tree-node-children {
+            margin-left: 20px;
+        }
+
+        .format-selectors {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .format-option {
+            text-align: center;
+            margin: 10px;
+        }
+
+        .format-option input[type="radio"] {
+            display: none;
+        }
+
+        .format-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .format-option label:hover {
+            border-color: var(--primary-color);
+        }
+
+        .format-option input[type="radio"]:checked + label {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .format-option i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .processing {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .loader {
+            border: 5px solid var(--light-color);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success, .error {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .success i {
+            font-size: 4rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .error i {
+            font-size: 4rem;
+            color: var(--error-color);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            color: var(--dark-color);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #e1e1e1;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-text:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>TAR File Converter</h1>
+            <p>Convert problematic TAR files to other formats</p>
+        </header>
+
+        <main>
+            <div class="upload-section" id="upload-section">
+                <div class="upload-box" id="drop-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h2>Upload TAR File</h2>
+                    <p>Drag & drop your TAR file here, or click to browse</p>
+                    <input type="file" id="file-input" accept=".tar,.tar.gz,.tgz,.tar.bz2,.tbz2" hidden>
+                    <button id="browse-button" class="btn">Browse Files</button>
+                </div>
+                <div class="file-info" id="file-info" style="display: none;">
+                    <div class="file-details">
+                        <i class="fas fa-file-archive"></i>
+                        <span id="file-name"></span>
+                    </div>
+                    <button id="change-file-btn" class="btn-text">Change file</button>
+                </div>
+            </div>
+
+            <div class="content-section" id="content-section" style="display: none;">
+                <h2>File Contents</h2>
+                <div class="file-tree" id="file-tree"></div>
+            </div>
+
+            <div class="conversion-section" id="conversion-section" style="display: none;">
+                <h2>Convert File</h2>
+                <div class="format-selectors">
+                    <div class="format-option">
+                        <input type="radio" id="format-zip" name="format" value="zip" checked>
+                        <label for="format-zip">
+                            <i class="fas fa-file-archive"></i>
+                            <span>ZIP Format</span>
+                        </label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="format-7z" name="format" value="7z">
+                        <label for="format-7z">
+                            <i class="fas fa-file-archive"></i>
+                            <span>7Z Format</span>
+                        </label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="format-rar" name="format" value="rar">
+                        <label for="format-rar">
+                            <i class="fas fa-file-archive"></i>
+                            <span>RAR Format</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button id="convert-btn" class="btn btn-primary">Convert File</button>
+            </div>
+
+            <div class="result-section" id="result-section" style="display: none;">
+                <div class="processing" id="processing">
+                    <div class="loader"></div>
+                    <p>Processing your file...</p>
+                </div>
+
+                <div class="success" id="success" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <h2>File Converted Successfully!</h2>
+                    <p>Your file is ready for download.</p>
+                    <button id="download-btn" class="btn btn-primary">Download File</button>
+                </div>
+
+                <div class="error" id="error" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h2>Conversion Failed</h2>
+                    <p id="error-message"></p>
+                    <button id="retry-btn" class="btn">Try Again</button>
+                </div>
+                <!-- Add this inside the processing div in result-section -->
+                <div class="processing" id="processing">
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%" 
+                                aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="progress-text">0%</span>
+                            <span id="progress-status">Starting...</span>
+                        </div>
+                    </div>
+                    <p>Processing your file...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 TAR Converter Tool</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const browseButton = document.getElementById('browse-button');
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const changeFileBtn = document.getElementById('change-file-btn');
+            const uploadSection = document.getElementById('upload-section');
+            const contentSection = document.getElementById('content-section');
+            const conversionSection = document.getElementById('conversion-section');
+            const resultSection = document.getElementById('result-section');
+            const fileTree = document.getElementById('file-tree');
+            const convertBtn = document.getElementById('convert-btn');
+            const processing = document.getElementById('processing');
+            const success = document.getElementById('success');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+            const downloadBtn = document.getElementById('download-btn');
+            const retryBtn = document.getElementById('retry-btn');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressStatus = document.getElementById('progress-status');
+
+            let eventSource = null;
+
+            // Event listeners for file upload
+            browseButton.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('dragleave', handleDragLeave);
+            dropArea.addEventListener('drop', handleDrop);
+            changeFileBtn.addEventListener('click', resetUpload);
+            convertBtn.addEventListener('click', convertFile);
+            downloadBtn.addEventListener('click', downloadFile);
+            retryBtn.addEventListener('click', resetConversion);
+
+            // Handle file selection
+            function handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file && isValidFile(file)) {
+                    uploadFile(file);
+                } else {
+                    showError('Please select a valid TAR file.');
+                }
+            }
+
+            // Handle drag over
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.classList.add('dragover');
+            }
+
+            // Handle drag leave
+            function handleDragLeave(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.classList.remove('dragover');
+            }
+
+            // Handle file drop
+            function handleDrop(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.classList.remove('dragover');
+
+                const file = e.dataTransfer.files[0];
+                if (file && isValidFile(file)) {
+                    uploadFile(file);
+                } else {
+                    showError('Please drop a valid TAR file.');
+                }
+            }
+
+            // Check if file is valid
+            function isValidFile(file) {
+                const validExtensions = ['.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tbz2'];
+                const name = file.name.toLowerCase();
+                return validExtensions.some(ext => name.endsWith(ext));
+            }
+
+            // Upload file to server
+            function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fileName.textContent = data.filename;
+                        fileInfo.style.display = 'flex';
+                        dropArea.style.display = 'none';
+
+                        // Fetch and display file contents
+                        fetchFileContents();
+                    } else {
+                        showError(data.error || 'Failed to upload file.');
+                    }
+                })
+                .catch(err => {
+                    showError('Error uploading file: ' + err.message);
+                });
+            }
+
+            // Fetch file contents from server
+            function fetchFileContents() {
+                fetch('/list_contents')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        renderFileTree(data.contents);
+                        contentSection.style.display = 'block';
+                        conversionSection.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    showError('Error fetching file contents: ' + err.message);
+                });
+            }
+
+            // Render file tree
+            function renderFileTree(contents) {
+                fileTree.innerHTML = '';
+
+                function createTreeNode(node) {
+                    const nodeElement = document.createElement('div');
+                    nodeElement.className = 'tree-node';
+
+                    const nodeContent = document.createElement('div');
+                    nodeContent.className = 'tree-node-content';
+
+                    const icon = document.createElement('i');
+                    if (node.type === 'directory') {
+                        icon.className = 'fas fa-folder tree-node-icon';
+                    } else {
+                        icon.className = 'fas fa-file tree-node-icon';
+                    }
+
+                    const name = document.createElement('span');
+                    name.className = 'tree-node-name';
+                    name.textContent = node.name;
+
+                    nodeContent.appendChild(icon);
+                    nodeContent.appendChild(name);
+                    nodeElement.appendChild(nodeContent);
+
+                    if (node.type === 'directory' && node.children && node.children.length > 0) {
+                        const childrenContainer = document.createElement('div');
+                        childrenContainer.className = 'tree-node-children';
+                        childrenContainer.style.display = 'none';
+
+                        node.children.forEach(child => {
+                            childrenContainer.appendChild(createTreeNode(child));
+                        });
+
+                        nodeElement.appendChild(childrenContainer);
+
+                        nodeContent.addEventListener('click', () => {
+                            const isOpen = childrenContainer.style.display !== 'none';
+                            icon.className = isOpen ? 'fas fa-folder tree-node-icon' : 'fas fa-folder-open tree-node-icon';
+                            childrenContainer.style.display = isOpen ? 'none' : 'block';
+                        });
+                    }
+
+                    return nodeElement;
+                }
+
+                contents.forEach(item => {
+                    fileTree.appendChild(createTreeNode(item));
+                });
+            }
+
+            // Convert file
+            function convertFile() {
+                const format = document.querySelector('input[name="format"]:checked').value;
+
+                // Close any existing event source
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                // Show processing state
+                resultSection.style.display = 'block';
+                processing.style.display = 'block';
+                success.style.display = 'none';
+                error.style.display = 'none';
+
+                // Reset progress bar
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', '0');
+                progressText.textContent = '0%';
+                progressStatus.textContent = 'Starting...';
+
+                // Send conversion request
+                fetch('/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ format }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Connect to SSE endpoint for progress updates
+                        connectToEventSource();
+                    } else {
+                        processing.style.display = 'none';
+                        errorMessage.textContent = data.error || 'Unknown error occurred';
+                        error.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    processing.style.display = 'none';
+                    errorMessage.textContent = 'Error during conversion: ' + err.message;
+                    error.style.display = 'block';
+                });
+            }
+
+            // Connect to Server-Sent Events for progress updates
+            function connectToEventSource() {
+                eventSource = new EventSource('/progress');
+
+                eventSource.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+
+                    // Update progress bar
+                    const percent = data.progress;
+                    progressBar.style.width = percent + '%';
+                    progressBar.setAttribute('aria-valuenow', percent);
+                    progressText.textContent = percent + '%';
+                    progressStatus.textContent = data.message || '';
+
+                    // Handle status changes
+                    if (data.status === 'complete') {
+                        eventSource.close();
+                        processing.style.display = 'none';
+                        success.style.display = 'block';
+                    } else if (data.status === 'failed') {
+                        eventSource.close();
+                        processing.style.display = 'none';
+                        errorMessage.textContent = data.error || data.message || 'Conversion failed';
+                        error.style.display = 'block';
+                    }
+                };
+
+                eventSource.onerror = function() {
+                    eventSource.close();
+                    errorMessage.textContent = 'Lost connection to server';
+                    processing.style.display = 'none';
+                    error.style.display = 'block';
+                };
+            }
+
+            // Download file
+            function downloadFile() {
+                window.location.href = '/download';
+            }
+
+            // Reset upload
+            function resetUpload() {
+                fileInput.value = '';
+                fileName.textContent = '';
+                fileInfo.style.display = 'none';
+                dropArea.style.display = 'block';
+                contentSection.style.display = 'none';
+                conversionSection.style.display = 'none';
+                resultSection.style.display = 'none';
+                fileTree.innerHTML = '';
+
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            }
+
+            // Reset conversion
+            function resetConversion() {
+                resultSection.style.display = 'none';
+                error.style.display = 'none';
+
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            }
+
+            // Show error
+            function showError(message) {
+                alert(message);
+            }
+
+            // Clean up before leaving page
+            window.addEventListener('beforeunload', function() {
+                if (eventSource) {
+                    eventSource.close();
+                }
+                fetch('/cleanup', { method: 'POST' });
+            });
+        });
+    </script>
+</body>
+</html>
