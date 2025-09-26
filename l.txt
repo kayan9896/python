@@ -1,41 +1,4 @@
-# ================================
-# Configure Shell Launcher for Kiosk Mode
-# Windows 10 Enterprise LTSC
-# ================================
+$Namespace = "root\standardcimv2\embedded"
+$ClassName = "WESL_UserSetting"
 
-# Change these variables to match your setup
-$UserName    = "kioskuser"                           # Local kiosk user
-$AppPath     = "C:\Path\To\YourApp.exe"              # Full path to Electron app
-$UseFallback = 1                                     # 1 = enable Explorer fallback, 0 = no fallback
-
-# WMI Shell Launcher class
-$Namespace   = "root\standardcimv2\embedded"
-$ClassName   = "WESL_UserSetting"
-
-Write-Host "Fetching user SID for $UserName..."
-try {
-    $UserSid = (Get-LocalUser -Name $UserName).Sid.Value
-    Write-Host "User SID: $UserSid"
-} catch {
-    Write-Error "User $UserName not found. Make sure the account exists."
-    exit 1
-}
-
-Write-Host "Accessing Shell Launcher WMI class..."
-$ShellLauncher = Get-WmiObject -Namespace $Namespace -Class $ClassName
-
-Write-Host "Setting $AppPath as custom shell for $UserName..."
-$ShellLauncher.SetCustomShell($UserSid, $AppPath, "", $UseFallback)
-
-Write-Host "Done! Verifying..."
-$ShellLauncher.GetCustomShell($UserSid)
-
-Write-Host "`n✅ Kiosk shell set for $UserName"
-Write-Host "   Custom shell: $AppPath"
-if ($UseFallback -eq 1) {
-    Write-Host "   Fallback shell: Explorer.exe enabled"
-} else {
-    Write-Host "   Fallback shell: Disabled"
-}
-
-Write-Host "`n👉 Restart and log in as $UserName to test kiosk mode."
+$ShellLauncher = Get-CimInstance -Namespace $Namespace -ClassName $ClassName
