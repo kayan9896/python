@@ -1,4 +1,0 @@
-$Namespace = "root\standardcimv2\embedded"
-$ClassName = "WESL_UserSetting"
-
-$ShellLauncher = Get-CimInstance -Namespace $Namespace -ClassName $ClassName
